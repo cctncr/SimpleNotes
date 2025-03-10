@@ -2,4 +2,6 @@
     <string name="app_name">SimpleNotes</string>
     <string name="add_note">Add Note</string>
     <string name="notes">Notes</string>
+    <string name="title">Title</string>
+    <string name="start_typing">Start typing!</string>
 </resources>
