@@ -64,7 +64,7 @@ class NotesAdapter(
     inner class ViewHolder(private val binding: NoteItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(note: Note) {
-            binding.title.text = note.text
+            binding.title.text = note.title
             binding.text.text = note.text
             binding.root.contentDescription = note.title
         }
