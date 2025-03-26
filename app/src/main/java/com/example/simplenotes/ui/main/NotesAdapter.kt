@@ -1,27 +1,27 @@
 package com.example.simplenotes.ui.main
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import com.example.simplenotes.R
 import com.example.simplenotes.data.local.entity.Note
+import com.example.simplenotes.databinding.NoteItemBinding
 import java.util.Collections
 
 class NotesAdapter(
     private var notes: MutableList<Note>,
     private val onNoteDeleted: (Note) -> Unit,
     private val onNotesReordered: (List<Note>) -> Unit
-) :
-    RecyclerView.Adapter<NotesAdapter.ViewHolder>(), ItemTouchHelperAdapter {
+) : RecyclerView.Adapter<NotesAdapter.ViewHolder>(), ItemTouchHelperAdapter {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.note_item, parent, false)
+        val binding = NoteItemBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
 
-        return ViewHolder(view)
+        return ViewHolder(binding)
     }
 
     override fun getItemCount(): Int {
@@ -29,10 +29,7 @@ class NotesAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val viewGroup = holder.itemView
-        viewGroup.findViewById<TextView>(R.id.title).text = notes[position].title
-        viewGroup.findViewById<TextView>(R.id.text).text = notes[position].text
-        viewGroup.contentDescription = notes[position].title
+        holder.bind(notes[position])
     }
 
     fun updateNotes(newNotes: List<Note>) {
@@ -64,5 +61,12 @@ class NotesAdapter(
         onNotesReordered(notes.toList())
     }
 
-    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
+    inner class ViewHolder(private val binding: NoteItemBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+        fun bind(note: Note) {
+            binding.title.text = note.text
+            binding.text.text = note.text
+            binding.root.contentDescription = note.title
+        }
+    }
 }

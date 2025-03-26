@@ -4,27 +4,22 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
 import com.example.simplenotes.ui.addnote.AddNoteActivity
-import com.example.simplenotes.R
 import com.example.simplenotes.data.local.database.NoteDatabase
 import com.example.simplenotes.data.local.entity.Note
 import com.example.simplenotes.data.repository.NoteRepository
+import com.example.simplenotes.databinding.ActivityMainBinding
 import com.example.simplenotes.viewmodel.NoteViewModel
 import com.example.simplenotes.viewmodel.NoteViewModelFactory
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var notesRecyclerView: RecyclerView
-    private lateinit var toolbar: Toolbar
-    private lateinit var fab: FloatingActionButton
     private lateinit var viewModel: NoteViewModel
     private lateinit var adapter: NotesAdapter
+    private lateinit var binding: ActivityMainBinding
 
     private val createNoteLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -36,7 +31,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         setupViewModel()
         initViews()
@@ -71,23 +67,19 @@ class MainActivity : AppCompatActivity() {
             onNoteDeleted = { note -> viewModel.deleteNote(note) },
             onNotesReordered = { notes -> viewModel.reorderNotes(notes) }
         )
-        notesRecyclerView = findViewById(R.id.notesRecyclerView)
-        notesRecyclerView.layoutManager = LinearLayoutManager(this)
-        notesRecyclerView.adapter = adapter
+
+        binding.notesRecyclerView.layoutManager = LinearLayoutManager(this)
+        binding.notesRecyclerView.adapter = adapter
         val callback: ItemTouchHelper.Callback = NoteTouchHelperCallback(adapter)
         val touchHelper = ItemTouchHelper(callback)
-        touchHelper.attachToRecyclerView(notesRecyclerView)
+        touchHelper.attachToRecyclerView(binding.notesRecyclerView)
 
         // Toolbar
-        toolbar = findViewById(R.id.toolbar)
-        setSupportActionBar(toolbar)
-
-        // Fab
-        fab = findViewById(R.id.fab)
+        setSupportActionBar(binding.toolbar)
     }
 
     private fun initListeners() {
-        fab.setOnClickListener {
+        binding.fab.setOnClickListener {
             createNoteLauncher
                 .launch(Intent(this, AddNoteActivity::class.java))
         }
