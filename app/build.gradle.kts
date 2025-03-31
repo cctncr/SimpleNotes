@@ -63,7 +63,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.livedata.ktx)
     // Lifecycles only (without ViewModel or LiveData)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-
+    // hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.fragment)
 }

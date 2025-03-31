@@ -14,7 +14,6 @@ import com.example.simplenotes.data.local.entity.Note
 import com.example.simplenotes.data.repository.NoteRepository
 import com.example.simplenotes.databinding.ActivityMainBinding
 import com.example.simplenotes.viewmodel.NoteViewModel
-import com.example.simplenotes.viewmodel.NoteViewModelFactory
 
 class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: NoteViewModel

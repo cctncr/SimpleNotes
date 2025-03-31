@@ -6,11 +6,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.simplenotes.data.local.entity.Note
 import com.example.simplenotes.data.repository.NoteRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
+@HiltViewModel
+class NoteViewModel @Inject constructor(
+    private val repository: NoteRepository
+) : ViewModel() {
     private val _allNotes = MutableLiveData<List<Note>>()
     val allNotes: LiveData<List<Note>> = _allNotes
+
+    init {
+        loadNotes()
+    }
 
     private fun loadNotes() {
         viewModelScope.launch {
@@ -43,7 +52,4 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
         }
     }
 
-    init {
-        loadNotes()
-    }
 }
