@@ -100,6 +100,7 @@ _Screenshots will be added when the UI is finalized._
 - ✅ Add swipe to delete functionality
 - ✅ Add drag and drop reordering
 - ✅ Implement Hilt for dependency injection
+- ⬜ Transition to a single activity with fragments approach
 - ⬜ Add note editing functionality
 - ⬜ Implement search feature
 - ⬜ Add unit and UI tests
