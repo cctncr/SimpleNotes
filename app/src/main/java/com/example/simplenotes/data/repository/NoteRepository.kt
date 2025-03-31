@@ -2,19 +2,11 @@ package com.example.simplenotes.data.repository
 
 import com.example.simplenotes.data.local.dao.NoteDao
 import com.example.simplenotes.data.local.entity.Note
+import javax.inject.Inject
 
-class NoteRepository(private val noteDao: NoteDao) {
-    companion object {
-        @Volatile
-        private var instance: NoteRepository? = null
-
-        fun getInstance(noteDao: NoteDao): NoteRepository {
-            return instance ?: synchronized(this) {
-                instance ?: NoteRepository(noteDao).also { instance = it }
-            }
-        }
-    }
-
+class NoteRepository @Inject constructor(
+    private val noteDao: NoteDao
+) {
     suspend fun getAllNotes(): List<Note> {
         return noteDao.getAll()
     }
