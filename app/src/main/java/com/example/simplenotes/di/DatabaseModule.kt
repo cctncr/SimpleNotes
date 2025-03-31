@@ -16,7 +16,7 @@ import javax.inject.Singleton
 object DatabaseModule {
     @Provides
     @Singleton
-    fun provideSingleton(@ApplicationContext appContext: Context): NoteDatabase {
+    fun provideDatabase(@ApplicationContext appContext: Context): NoteDatabase {
         return databaseBuilder(appContext, NoteDatabase::class.java, "note-database")
             .fallbackToDestructiveMigration()
             .build()
