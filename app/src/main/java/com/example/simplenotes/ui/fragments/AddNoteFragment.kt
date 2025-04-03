@@ -49,7 +49,7 @@ class AddNoteFragment : Fragment() {
             val action = AddNoteFragmentDirections.actionAddNoteFragmentToNotesListFragment()
             findNavController().navigate(action)
         } else {
-            binding.etTitle.error = "Tittle or content required"
+            binding.etTitle.error = "Title or content required"
         }
     }
 }
