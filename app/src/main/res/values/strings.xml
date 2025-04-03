@@ -4,4 +4,5 @@
     <string name="notes">Notes</string>
     <string name="title">Title</string>
     <string name="start_typing">Start typing!</string>
+    <string name="title_or_content_required">Title or content required</string>
 </resources>

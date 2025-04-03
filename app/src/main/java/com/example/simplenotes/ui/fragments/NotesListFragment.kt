@@ -65,6 +65,12 @@ class NotesListFragment : Fragment() {
             },
             onNotesReordered = { reorderedNotes ->
                 viewModel.reorderNotes(reorderedNotes)
+            },
+            onNoteClick = { clickedNote ->
+                val action = NotesListFragmentDirections.actionNotesListFragmentToEditNoteFragment(
+                    clickedNote.id
+                )
+                findNavController().navigate(action)
             }
         )
 

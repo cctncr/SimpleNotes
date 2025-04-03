@@ -17,6 +17,9 @@ class NoteViewModel @Inject constructor(
     private val _allNotes = MutableLiveData<List<Note>>()
     val allNotes: LiveData<List<Note>> = _allNotes
 
+    private val _currentNote = MutableLiveData<Note?>()
+    val currentNote: LiveData<Note?> = _currentNote
+
     init {
         loadNotes()
     }
@@ -52,7 +55,7 @@ class NoteViewModel @Inject constructor(
         }
     }
 
-    private fun validateNoteInput(title: String, text: String): Boolean {
+    fun validateNoteInput(title: String, text: String): Boolean {
         return title.isNotEmpty() || text.isNotEmpty()
     }
 
@@ -63,6 +66,20 @@ class NoteViewModel @Inject constructor(
             true
         } else {
             false
+        }
+    }
+
+    fun getNoteById(id: Int): LiveData<Note?> {
+        viewModelScope.launch {
+            _currentNote.value = repository.getNoteById(id)
+        }
+        return currentNote
+    }
+
+    fun updateNote(note: Note) {
+        viewModelScope.launch {
+            repository.updateNote(note)
+            loadNotes()
         }
     }
 }

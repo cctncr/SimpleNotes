@@ -11,7 +11,8 @@ import java.util.Collections
 class NotesAdapter(
     private var notes: MutableList<Note>,
     private val onNoteDeleted: (Note) -> Unit,
-    private val onNotesReordered: (List<Note>) -> Unit
+    private val onNotesReordered: (List<Note>) -> Unit,
+    private val onNoteClick: (Note) -> Unit
 ) : RecyclerView.Adapter<NotesAdapter.ViewHolder>(), ItemTouchHelperAdapter {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -67,6 +68,10 @@ class NotesAdapter(
             binding.title.text = note.title
             binding.text.text = note.text
             binding.root.contentDescription = note.title
+
+            binding.root.setOnClickListener {
+                onNoteClick(note)
+            }
         }
     }
 }

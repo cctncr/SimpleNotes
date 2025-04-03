@@ -31,4 +31,7 @@ interface NoteDao {
             updatePosition(noteIds[i], positions[i])
         }
     }
+
+    @Query("SELECT * FROM note WHERE id = :id")
+    suspend fun getNoteById(id: Int): Note?
 }

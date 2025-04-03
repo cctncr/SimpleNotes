@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.example.simplenotes.R
 import com.example.simplenotes.databinding.FragmentAddNoteBinding
 import com.example.simplenotes.viewmodel.NoteViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -49,7 +50,7 @@ class AddNoteFragment : Fragment() {
             val action = AddNoteFragmentDirections.actionAddNoteFragmentToNotesListFragment()
             findNavController().navigate(action)
         } else {
-            binding.etTitle.error = "Title or content required"
+            binding.etTitle.error = getString(R.string.title_or_content_required)
         }
     }
 }

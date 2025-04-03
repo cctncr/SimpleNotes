@@ -24,4 +24,12 @@ class NoteRepository @Inject constructor(
         val positions = List(notes.size) { index -> index }
         noteDao.updatePositions(ids, positions)
     }
+
+    suspend fun getNoteById(id: Int): Note? {
+        return noteDao.getNoteById(id)
+    }
+
+    suspend fun updateNote(note: Note) {
+        noteDao.update(note)
+    }
 }
