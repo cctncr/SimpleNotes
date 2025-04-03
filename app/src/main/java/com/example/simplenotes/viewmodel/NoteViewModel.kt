@@ -52,4 +52,17 @@ class NoteViewModel @Inject constructor(
         }
     }
 
+    private fun validateNoteInput(title: String, text: String): Boolean {
+        return title.isNotEmpty() || text.isNotEmpty()
+    }
+
+    fun createAndSaveNote(title: String, text: String): Boolean {
+        return if (validateNoteInput(title, text)) {
+            val note = Note(title = title, text = text)
+            insertNote(note)
+            true
+        } else {
+            false
+        }
+    }
 }
