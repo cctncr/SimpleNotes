@@ -82,4 +82,11 @@ class NoteViewModel @Inject constructor(
             loadNotes()
         }
     }
+
+    fun hasUnsavedChanges(originalNote: Note?, currentTitle: String, currentText: String): Boolean {
+        val originalTitle = originalNote?.title ?: ""
+        val originalText = originalNote?.text ?: ""
+
+        return originalTitle != currentTitle || originalText != currentText
+    }
 }

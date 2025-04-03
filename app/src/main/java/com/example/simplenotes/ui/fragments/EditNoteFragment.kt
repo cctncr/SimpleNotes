@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -36,6 +38,7 @@ class EditNoteFragment : Fragment() {
 
         loadNoteData()
         setupListeners()
+        setupBackPressHandling()
     }
 
     override fun onDestroyView() {
@@ -83,5 +86,31 @@ class EditNoteFragment : Fragment() {
         } else {
             binding.etTitle.error = getString(R.string.title_or_content_required)
         }
+    }
+
+    private fun setupBackPressHandling() {
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val currentTitle = binding.etTitle.text.toString()
+                val currentText = binding.etText.text.toString()
+
+                if (viewModel.hasUnsavedChanges(currentNote, currentTitle, currentText)) {
+                    showDiscardChangesDialog()
+                } else {
+                    findNavController().navigateUp()
+                }
+            }
+        }
+
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
+    }
+
+    private fun showDiscardChangesDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Discard changes?")
+            .setMessage("You have unsaved changes. Are you sure you want to discard them?")
+            .setPositiveButton("Discard") { _, _ -> findNavController().navigateUp() }
+            .setNegativeButton("Keep editing", null)
+            .show()
     }
 }
