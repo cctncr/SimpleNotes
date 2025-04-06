@@ -20,6 +20,12 @@ class NoteViewModel @Inject constructor(
     private val _currentNote = MutableLiveData<Note?>()
     val currentNote: LiveData<Note?> = _currentNote
 
+    private val _searchResults = MutableLiveData<List<Note>>()
+    val searchResults: LiveData<List<Note>> = _searchResults
+
+    private var _isSearchActive = MutableLiveData<Boolean>(false)
+    val isSearchActive: LiveData<Boolean> = _isSearchActive
+
     init {
         loadNotes()
     }
@@ -88,5 +94,23 @@ class NoteViewModel @Inject constructor(
         val originalText = originalNote?.text ?: ""
 
         return originalTitle != currentTitle || originalText != currentText
+    }
+
+    fun clearSearch() {
+        _isSearchActive.value = false
+        _searchResults.value = emptyList()
+        loadNotes()
+    }
+
+    fun searchNotes(query: String) {
+        if (query.isBlank()) {
+            clearSearch()
+            return
+        }
+
+        viewModelScope.launch {
+            _isSearchActive.value = true
+            _searchResults.value = repository.searchNotes(query)
+        }
     }
 }
