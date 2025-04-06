@@ -1,5 +1,6 @@
 package com.example.simplenotes.viewmodel
 
+import android.system.Os.remove
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -7,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.simplenotes.data.local.entity.Note
 import com.example.simplenotes.data.repository.NoteRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -23,8 +26,25 @@ class NoteViewModel @Inject constructor(
     private val _searchResults = MutableLiveData<List<Note>>()
     val searchResults: LiveData<List<Note>> = _searchResults
 
-    private var _isSearchActive = MutableLiveData<Boolean>(false)
+    private val _isSearchActive = MutableLiveData(false)
     val isSearchActive: LiveData<Boolean> = _isSearchActive
+
+    private val _searchQuery = MutableLiveData<String>()
+    val searchQuery: LiveData<String> = _searchQuery
+
+    private val _searchTitle = MutableLiveData("Notes")
+    val searchTitle: LiveData<String> = _searchTitle
+
+    private val _emptyStateVisible = MutableLiveData(false)
+    val emptyStateVisible: LiveData<Boolean> = _emptyStateVisible
+
+    private val _emptyStateMessage = MutableLiveData("")
+    val emptyStateMessage: LiveData<String> = _emptyStateMessage
+
+    private val _fabVisible = MutableLiveData(true)
+    val fabVisible: LiveData<Boolean> = _fabVisible
+
+    private var searchJob: Job? = null
 
     init {
         loadNotes()
@@ -96,21 +116,61 @@ class NoteViewModel @Inject constructor(
         return originalTitle != currentTitle || originalText != currentText
     }
 
-    fun clearSearch() {
-        _isSearchActive.value = false
-        _searchResults.value = emptyList()
-        loadNotes()
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+
+        searchJob?.cancel()
+
+        if (query.isBlank()) {
+            clearSearch()
+            return
+        }
+
+        searchJob = viewModelScope.launch {
+            delay(300)
+            performSearch(query)
+        }
     }
 
-    fun searchNotes(query: String) {
+    fun onSearchQuerySubmitted(query: String) {
+        _searchQuery.value = query
+
+        searchJob?.cancel()
+
         if (query.isBlank()) {
             clearSearch()
             return
         }
 
         viewModelScope.launch {
-            _isSearchActive.value = true
-            _searchResults.value = repository.searchNotes(query)
+            performSearch(query)
         }
+    }
+
+    private suspend fun performSearch(query: String) {
+        val results = repository.searchNotes(query)
+
+        _isSearchActive.value = true
+        _searchResults.value = results
+        _searchTitle.value = "Search Results for \"$query\""
+        _fabVisible.value = false
+
+        val isEmpty = results.isEmpty()
+        _emptyStateVisible.value = isEmpty
+        if (isEmpty) {
+            _emptyStateMessage.value = "No notes found for \"$query\""
+        }
+    }
+
+    fun clearSearch() {
+        _isSearchActive.value = false
+        _searchResults.value = emptyList()
+        _searchQuery.value = ""
+        _searchTitle.value = "Notes"
+        _emptyStateVisible.value = false
+        _fabVisible.value = true
+
+        searchJob?.cancel()
+        loadNotes()
     }
 }
