@@ -1,6 +1,5 @@
 package com.example.simplenotes.viewmodel
 
-import android.system.Os.remove
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
