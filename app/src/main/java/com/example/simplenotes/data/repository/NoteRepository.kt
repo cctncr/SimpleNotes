@@ -32,4 +32,8 @@ class NoteRepository @Inject constructor(
     suspend fun updateNote(note: Note) {
         noteDao.update(note)
     }
+
+    suspend fun searchNotes(query: String): List<Note> {
+        return noteDao.searchNotes(query)
+    }
 }
