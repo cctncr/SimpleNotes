@@ -5,4 +5,7 @@
     <string name="title">Title</string>
     <string name="start_typing">Start typing!</string>
     <string name="title_or_content_required">Title or content required</string>
+    <string name="no_notes_found">No notes found</string>
+    <string name="search">Search</string>
+    <string name="search_hint">Search notes…</string>
 </resources>
