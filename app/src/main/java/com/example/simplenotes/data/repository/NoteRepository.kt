@@ -11,8 +11,9 @@ class NoteRepository @Inject constructor(
         return noteDao.getAll()
     }
 
-    suspend fun insertNote(note: Note) {
-        noteDao.insert(note)
+    suspend fun insertNote(note: Note): Note {
+        val id = noteDao.insert(note)
+        return note.copy(id = id.toInt())
     }
 
     suspend fun deleteNote(note: Note) {

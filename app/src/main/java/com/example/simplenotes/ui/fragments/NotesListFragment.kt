@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.transition.Fade
@@ -44,6 +45,7 @@ class NotesListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupTransitions()
         setupRecyclerView()
         setupListeners()
         setupMenu()
@@ -59,11 +61,8 @@ class NotesListFragment : Fragment() {
         val menuProvider = object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.notes_list_menu, menu)
-
                 val searchItem = menu.findItem(R.id.action_search)
                 val searchView = searchItem.actionView as SearchView
-
-                // Configure SearchView
                 searchView.queryHint = getString(R.string.search_hint)
 
                 searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
@@ -89,11 +88,10 @@ class NotesListFragment : Fragment() {
                     }
                 })
 
-                viewModel.isSearchActive.value?.let { isActive ->
-                    if (isActive) {
-                        searchItem.expandActionView()
-                        searchView.setQuery(viewModel.searchQuery.value, false)
-                    }
+                val currentState = viewModel.viewState.value
+                if (currentState?.isSearchActive == true) {
+                    searchItem.expandActionView()
+                    searchView.setQuery(currentState.searchQuery, false)
                 }
             }
 
@@ -109,34 +107,20 @@ class NotesListFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        viewModel.allNotes.observe(viewLifecycleOwner) { notes ->
-            notesAdapter.updateNotes(notes)
-        }
+        viewModel.viewState.observe(viewLifecycleOwner) { state ->
+            notesAdapter.updateNotes(state.notes)
 
-        viewModel.searchResults.observe(viewLifecycleOwner) { results ->
-            if (viewModel.isSearchActive.value == true) {
-                notesAdapter.updateNotes(results)
-            }
-        }
+            (activity as AppCompatActivity).supportActionBar?.title = state.searchTitle
 
-        viewModel.searchTitle.observe(viewLifecycleOwner) { title ->
-            val actionBar = (activity as AppCompatActivity).supportActionBar
-            actionBar?.title = title
-        }
+            binding.emptySearchMessage.visibility =
+                if (state.isEmptyStateVisible) View.VISIBLE else View.GONE
 
-        viewModel.emptyStateVisible.observe(viewLifecycleOwner) { visible ->
-            setupTransitions()
-            binding.emptySearchMessage.visibility = if (visible) View.VISIBLE else View.GONE
-            binding.notesRecyclerView.visibility = if (visible) View.GONE else View.VISIBLE
-        }
+            binding.notesRecyclerView.visibility =
+                if (state.isEmptyStateVisible) View.GONE else View.VISIBLE
 
-        viewModel.emptyStateMessage.observe(viewLifecycleOwner) { message ->
-            binding.emptySearchMessage.text = message
-        }
+            binding.emptySearchMessage.text = state.emptyStateMessage
 
-        viewModel.fabVisible.observe(viewLifecycleOwner) { visible ->
-            setupTransitions()
-            binding.fab.visibility = if (visible) View.VISIBLE else View.GONE
+            binding.fab.visibility = if (state.isFabVisible) View.VISIBLE else View.GONE
         }
     }
 
@@ -176,7 +160,8 @@ class NotesListFragment : Fragment() {
 
     private fun setupTransitions() {
         val fadeTransition = Fade()
-        fadeTransition.duration = 200
+        fadeTransition.duration = 300
         TransitionManager.beginDelayedTransition(binding.root as ViewGroup, fadeTransition)
+        binding.notesRecyclerView.itemAnimator = DefaultItemAnimator()
     }
 }

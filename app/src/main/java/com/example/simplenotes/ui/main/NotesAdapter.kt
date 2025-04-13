@@ -34,8 +34,10 @@ class NotesAdapter(
     }
 
     fun updateNotes(newNotes: List<Note>) {
-        val diffResult = DiffUtil.calculateDiff(NoteDiffCallback(notes, newNotes))
-        notes = newNotes.toMutableList()
+        val diffCallback = NoteDiffCallback(notes, newNotes)
+        val diffResult = DiffUtil.calculateDiff((diffCallback))
+        notes.clear()
+        notes.addAll(newNotes)
         diffResult.dispatchUpdatesTo(this)
     }
 
@@ -55,6 +57,8 @@ class NotesAdapter(
 
     override fun onItemDismiss(position: Int) {
         val noteToDelete = notes[position]
+        notes.removeAt(position)
+        notifyItemRemoved(position)
         onNoteDeleted(noteToDelete)
     }
 

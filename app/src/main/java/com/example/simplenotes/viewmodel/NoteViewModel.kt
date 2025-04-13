@@ -1,8 +1,10 @@
 package com.example.simplenotes.viewmodel
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.example.simplenotes.data.local.entity.Note
 import com.example.simplenotes.data.repository.NoteRepository
@@ -16,34 +18,25 @@ import javax.inject.Inject
 class NoteViewModel @Inject constructor(
     private val repository: NoteRepository
 ) : ViewModel() {
-    private val _allNotes = MutableLiveData<List<Note>>()
-    val allNotes: LiveData<List<Note>> = _allNotes
+    private val _allNotes = MutableLiveData<List<Note>>(emptyList())
 
-    private val _currentNote = MutableLiveData<Note?>()
-    val currentNote: LiveData<Note?> = _currentNote
-
-    private val _searchResults = MutableLiveData<List<Note>>()
-    val searchResults: LiveData<List<Note>> = _searchResults
-
+    private val _searchQuery = MutableLiveData("")
     private val _isSearchActive = MutableLiveData(false)
-    val isSearchActive: LiveData<Boolean> = _isSearchActive
-
-    private val _searchQuery = MutableLiveData<String>()
-    val searchQuery: LiveData<String> = _searchQuery
-
-    private val _searchTitle = MutableLiveData("Notes")
-    val searchTitle: LiveData<String> = _searchTitle
-
-    private val _emptyStateVisible = MutableLiveData(false)
-    val emptyStateVisible: LiveData<Boolean> = _emptyStateVisible
-
-    private val _emptyStateMessage = MutableLiveData("")
-    val emptyStateMessage: LiveData<String> = _emptyStateMessage
-
-    private val _fabVisible = MutableLiveData(true)
-    val fabVisible: LiveData<Boolean> = _fabVisible
-
     private var searchJob: Job? = null
+
+    private val _viewState = MediatorLiveData(NotesViewState()).apply {
+        value = NotesViewState()
+        addSource(_allNotes) { notes ->
+            if (_isSearchActive.value != true) {
+                value = value?.copy(
+                    notes = notes,
+                    isEmptyStateVisible = notes.isEmpty(),
+                    emptyStateMessage = if (notes.isEmpty()) "No notes yet" else ""
+                )
+            }
+        }
+    }
+    val viewState: LiveData<NotesViewState> = _viewState
 
     init {
         loadNotes()
@@ -55,28 +48,43 @@ class NoteViewModel @Inject constructor(
         }
     }
 
-    fun insertNote(note: Note) {
+    private fun insertNote(note: Note) {
         viewModelScope.launch {
-            repository.insertNote(note)
-            loadNotes()
+            val insertedNote = repository.insertNote(note)
+            _viewState.value = _viewState.value?.let { currentState ->
+                if (!currentState.isSearchActive) {
+                    val updatedNotes = currentState.notes + insertedNote
+                    currentState.copy(
+                        notes = updatedNotes,
+                        isEmptyStateVisible = false
+                    )
+                } else {
+                    currentState
+                }
+            }
         }
     }
 
     fun deleteNote(note: Note) {
         viewModelScope.launch {
             repository.deleteNote(note)
-            loadNotes()
+
+            _viewState.value = _viewState.value?.let { currentState ->
+                val updatedNotes = currentState.notes.filter { it.id != note.id }
+                currentState.copy(
+                    notes = updatedNotes,
+                    isEmptyStateVisible = updatedNotes.isEmpty() && !currentState.isSearchActive,
+                    emptyStateMessage = if (updatedNotes.isEmpty() && !currentState.isSearchActive)
+                        "No notes yet" else currentState.emptyStateMessage
+                )
+            }
         }
     }
 
     fun reorderNotes(notes: List<Note>) {
         viewModelScope.launch {
-            notes.forEachIndexed { index, note ->
-                note.position = index
-            }
-
             repository.updateNotePositions(notes)
-            loadNotes()
+            _viewState.value = _viewState.value?.copy(notes = notes)
         }
     }
 
@@ -96,15 +104,30 @@ class NoteViewModel @Inject constructor(
 
     fun getNoteById(id: Int): LiveData<Note?> {
         viewModelScope.launch {
-            _currentNote.value = repository.getNoteById(id)
+            val currentNote = repository.getNoteById(id)
+            _viewState.value = _viewState.value?.copy(currentNote = currentNote)
         }
-        return currentNote
+        return _viewState.map { it.currentNote }
     }
 
     fun updateNote(note: Note) {
         viewModelScope.launch {
             repository.updateNote(note)
-            loadNotes()
+
+            _viewState.value = _viewState.value?.let { currentState ->
+                val updatedNotes = currentState.notes.map {
+                    if (it.id == note.id) note else it
+                }
+
+                currentState.copy(
+                    notes = updatedNotes,
+                    currentNote = if (currentState.currentNote?.id == note.id) {
+                        note
+                    } else {
+                        currentState.currentNote
+                    }
+                )
+            }
         }
     }
 
@@ -117,59 +140,76 @@ class NoteViewModel @Inject constructor(
 
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
-
         searchJob?.cancel()
-
         if (query.isBlank()) {
             clearSearch()
             return
         }
-
         searchJob = viewModelScope.launch {
-            delay(300)
+            delay(300) // Debounce
             performSearch(query)
         }
     }
 
     fun onSearchQuerySubmitted(query: String) {
-        _searchQuery.value = query
-
-        searchJob?.cancel()
-
-        if (query.isBlank()) {
-            clearSearch()
-            return
-        }
-
         viewModelScope.launch {
-            performSearch(query)
+            if (query.isBlank()) {
+                clearSearch()
+                return@launch
+            }
+
+            val results = repository.searchNotes(query)
+            _viewState.value = _viewState.value?.copy(
+                notes = results,
+                isSearchActive = true,
+                searchQuery = query,
+                searchTitle = "Search Results for \"$query\"",
+                isFabVisible = false,
+                isEmptyStateVisible = results.isEmpty(),
+                emptyStateMessage = if (results.isEmpty()) "No notes found for \"$query\"" else ""
+            )
         }
     }
 
     private suspend fun performSearch(query: String) {
         val results = repository.searchNotes(query)
-
         _isSearchActive.value = true
-        _searchResults.value = results
-        _searchTitle.value = "Search Results for \"$query\""
-        _fabVisible.value = false
 
-        val isEmpty = results.isEmpty()
-        _emptyStateVisible.value = isEmpty
-        if (isEmpty) {
-            _emptyStateMessage.value = "No notes found for \"$query\""
-        }
+        _viewState.value = _viewState.value?.copy(
+            notes = results,
+            isSearchActive = true,
+            searchQuery = query,
+            searchTitle = "Search Results for \"$query\"",
+            isFabVisible = false,
+            isEmptyStateVisible = results.isEmpty(),
+            emptyStateMessage = if (results.isEmpty()) "No notes found for \"$query\"" else ""
+        )
     }
 
     fun clearSearch() {
-        _isSearchActive.value = false
-        _searchResults.value = emptyList()
-        _searchQuery.value = ""
-        _searchTitle.value = "Notes"
-        _emptyStateVisible.value = false
-        _fabVisible.value = true
+        viewModelScope.launch {
+            val allNotes = repository.getAllNotes()
 
-        searchJob?.cancel()
-        loadNotes()
+            _viewState.value = _viewState.value?.copy(
+                notes = allNotes,
+                isSearchActive = false,
+                searchQuery = "",
+                searchTitle = "Notes",
+                isFabVisible = true,
+                isEmptyStateVisible = allNotes.isEmpty(),
+                emptyStateMessage = if (allNotes.isEmpty()) "No notes yet" else ""
+            )
+        }
     }
 }
+
+data class NotesViewState(
+    val notes: List<Note> = emptyList(),
+    val currentNote: Note? = null,
+    val isSearchActive: Boolean = false,
+    val searchQuery: String = "",
+    val searchTitle: String = "Notes",
+    val isEmptyStateVisible: Boolean = false,
+    val emptyStateMessage: String = "",
+    val isFabVisible: Boolean = true
+)
